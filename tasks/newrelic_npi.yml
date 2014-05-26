@@ -1,0 +1,51 @@
+---
+- name: make newrelic npi folder
+  file: path={{ item }}
+        state=directory
+        recurse=yes
+        owner=root
+        group=root
+        mode=0755
+
+  with_items:
+  - /etc/newrelic-npi
+
+
+- name: copy shell script
+  template: src=roles/monitor-database/templates/npi.sh.j2
+            dest=/etc/newrelic-npi/npi.sh
+            owner=root
+            group=root
+            mode=0644
+
+
+- name: install newrelic platform installer
+  command: bash npi.sh chdir=/etc/newrelic-npi creates=/etc/newrelic-npi/npi
+
+
+- name: fetch the mysql plugin
+  shell: ./npi fetch nrmysql -y chdir=/etc/newrelic-npi creates=/etc/newrelic-npi/plugins/com.newrelic.plugins.mysql.instance
+
+
+- name: prepare the mysql plugin
+  shell: ./npi prepare nrmysql -n chdir=/etc/newrelic-npi creates=/etc/newrelic-npi/plugins/com.newrelic.plugins.mysql.instance/newrelic_mysql_plugin-2.0.0/config/plugin.json
+
+
+- name: copy mysql plugin configuration
+  template: src=roles/monitor-database/templates/plugin.json.j2
+            dest=/etc/newrelic-npi/plugins/com.newrelic.plugins.mysql.instance/newrelic_mysql_plugin-2.0.0/config/plugin.json.j2
+            owner=root
+            group=root
+            mode=0644
+  notify:
+  - restart nginx
+  - restart php-fpm
+  - restart mysql
+
+
+- name: add service for the mysql plugin
+  shell: ./npi add-service nrmysql --distro=debian --start chdir=/etc/newrelic-npi creates=/etc/init.d/newrelic_plugin_com.newrelic.plugins.mysql.instance
+
+
+- name: start the mysql plugin
+  shell: ./npi start nrmysql chdir=/etc/newrelic-npi
