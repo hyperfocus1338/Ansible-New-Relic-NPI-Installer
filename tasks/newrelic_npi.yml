@@ -12,7 +12,7 @@
 
 
 - name: copy shell script
-  template: src=roles/monitor-database/templates/npi.sh.j2
+  template: src=npi.sh.j2
             dest=/etc/newrelic-npi/npi.sh
             owner=root
             group=root
@@ -32,7 +32,7 @@
 
 
 - name: copy mysql plugin configuration
-  template: src=roles/monitor-database/templates/plugin.json.j2
+  template: src=plugin.json.j2
             dest=/etc/newrelic-npi/plugins/com.newrelic.plugins.mysql.instance/newrelic_mysql_plugin-2.0.0/config/plugin.json.j2
             owner=root
             group=root
